@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "282494732978",
+    "firebase_url": "https://super-couples.firebaseio.com",
+    "project_id": "super-couples",
+    "storage_bucket": "super-couples.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282494732978:android:5008c0dd6b3be9fd8917ab",
+        "android_client_info": {
+          "package_name": "com.supercouples"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "282494732978-2h0s1tnhb40vmdlk65il4kph0g9se7ku.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJ3UlBKGb5VxOGLpuV2GneOuRhjVYqj0g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "282494732978-2h0s1tnhb40vmdlk65il4kph0g9se7ku.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
