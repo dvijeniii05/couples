@@ -3,6 +3,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import 'react-native-gesture-handler'
+import {allStyles} from './AllStyles'
 
 import {
   StyleSheet,
@@ -18,46 +19,26 @@ import {
 
 
 
-const {width: WIDTH} = Dimensions.get('window');
+
 
 export default function RoomGen () {
 
     return(
         <View>
-    <View style={styles.roomName}>
-      <Text style={styles.roomText}>Ваша комната:</Text>
+    <View style={allStyles.roomName}>
+      <Text style={allStyles.roomText}>Ваша комната:</Text>
       <Text>  </Text>
-      <Text style={styles.roomText}>"******"</Text>
+      <Text style={allStyles.input} 
+      placeholder={'Придумайте Название'} 
+      placeholderTextColor={'rgba(255, 255, 255, 0.5)'}
+      underlineColorAndroid= 'transparent'>"******"</Text>
       </View>
-      <View style={styles.roomName}>
-        <Text style={styles.roomText}>Ваш пароль:</Text>
+      <View style={allStyles.roomName}>
+        <Text style={allStyles.roomText}>Ваш пароль:</Text>
         <Text>  </Text>
-      <Text style={styles.roomText}>"******"</Text>
+      <Text style={allStyles.input} placeholder={'Придумайте Пароль'}>"******"</Text>
       </View>
       </View>
 )
-}
-
-
-
-const styles = StyleSheet.create({
-
-roomText:{
-    color: 'white',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    fontSize: 18,
-    textAlign: 'center',
-    letterSpacing: 1
-  },
-  
-  roomName: {
-    width: WIDTH - 120,
-    marginTop: 80,
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    backgroundColor: 'rgba(106, 24, 119, 1)'
-  },
-
-})
+    }
+    
