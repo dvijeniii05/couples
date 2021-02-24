@@ -109,6 +109,20 @@ class AuthoristaionPage extends React.Component {
     auth()
       .signInAnonymously()
       .then(() => {
+        firebase.auth().onAuthStateChanged(async (user) => {
+          if (user) {
+            // User is signed in, see docs for a list of available properties
+            // https://firebase.google.com/docs/reference/js/firebase.User
+            const uid = user.uid;
+            await AsyncStorage.setItem('userId', JSON.stringify(uid))
+            
+            // ...
+          } else {
+            // User is signed out
+            // ...
+          }
+        });
+
         console.log('User signed in anonymously');
         this.setState({
           isAuthenticated: true,
@@ -130,7 +144,7 @@ class AuthoristaionPage extends React.Component {
       alert('Пожалуйста введите Никнейм')
     } else {
       try {
-    await AsyncStorage.setItem('nickname', this.state.nickname)
+    await AsyncStorage.setItem('nickname', JSON.stringify(this.state.nickname))
     this.props.navigation.navigate('GenderRoom');
     
     } catch(e) {
@@ -192,6 +206,20 @@ class SecondScreen2 extends React.Component {
     
   }
 
+/* async componentDidMount() {
+try {
+
+  const nickStated = await AsyncStorage.getItem('nickname')
+
+  if (nickStated != null) {
+    this.props.navigation.navigate('LoginScreen')
+  }
+
+} catch {
+console.log((e) => 'e')
+}
+} */
+
   async rememberNick () {
 
     if (this.state.nickname === 'no')
@@ -199,7 +227,7 @@ class SecondScreen2 extends React.Component {
       alert('Пожалуйста введите Никнейм')
     } else {
       try {
-    await AsyncStorage.setItem('nickname', this.state.nickname)
+    await AsyncStorage.setItem('nickname', JSON.stringify(this.state.nickname))
     this.props.navigation.navigate('LoginScreen');
     
     } catch(e) {
@@ -255,7 +283,7 @@ class LoginScreen extends React.Component {
     this.state = {
       roomNameToCheck: '',
       roomPassToCheck: '',
-
+      creator: '',
 
     }
   }
@@ -264,6 +292,9 @@ class LoginScreen extends React.Component {
     if (this.state.roomNameToCheck !== '' && this.state.roomPassToCheck !== '') {
     const snapshot = await collectionRef.where('roomName', '==', this.state.roomNameToCheck).get()
 
+    const getUserId = await AsyncStorage.getItem('userId')
+    const parsedUserId = JSON.parse(getUserId)
+
     try {
 
       if (snapshot.docs[0].exists) {
@@ -271,8 +302,31 @@ class LoginScreen extends React.Component {
         const passCheck = snapshot.docs[0].data()
 
         if (passCheck.roomPass === this.state.roomPassToCheck) {
-          this.props.navigation.navigate('ChatRoom')
-        } else {
+          // DO CODE IN HERE!!!!!! 
+          if (passCheck.user1 === parsedUserId || passCheck.user2 === parsedUserId) {
+            console.log('existing user logged in')
+            this.props.navigation.navigate('ChatRoom')
+            
+          }
+
+          else if (passCheck.user1 !== parsedUserId && passCheck.user2 === null){
+            firestore()
+            .collection('Rooms')
+            .doc(this.state.roomNameToCheck)
+            .set({
+              user2: parsedUserId
+            }, {merge: true})
+            console.log('New user2 added')
+            .then( this.props.navigation.navigate('ChatRoom') )
+
+          } else if (passCheck.user1 !== parsedUserId && passCheck.user2 !== parsedUserId) {
+            alert('Это не Ваша комната!')
+            console.log('Room is full')
+          }
+  
+          
+        } 
+        else {
           alert('Пароль введён неверно!')
           console.log('Password or does not match')
 
@@ -383,13 +437,12 @@ class GenderPicker extends React.Component {
   constructor(xoxo) {
     super(xoxo)
   }
-
-  async maybe ()  {
+  async maybe() {
     const trytextx = await AsyncStorage.getItem('currentRoom')
-  const trial = JSON.parse(trytextx)
-  console.log(trial)
+    const trial = JSON.parse(trytextx)
+    console.log(trial)
+    
   }
-
   render() {
     return (
 
@@ -437,6 +490,11 @@ class RoomName1 extends React.Component {
   }
   async generateRoom() {
     const nicknameCreator = await AsyncStorage.getItem('nickname')
+    const parsedNickNameCreator = JSON.parse(nicknameCreator)
+
+    const getUserId = await AsyncStorage.getItem('userId')
+    const parsedUserId = JSON.parse(getUserId)
+
     const snapshot = await collectionRef.where('roomName', '==', this.state.NewRoom).get()
 if ( this.state.NewRoom !== '' && this.state.NewPass !== '') {
 
@@ -449,8 +507,11 @@ if ( this.state.NewRoom !== '' && this.state.NewPass !== '') {
           .set({
             roomName: this.state.NewRoom,
             roomPass: this.state.NewPass,
-            creator: nicknameCreator,
-            
+            creator: parsedNickNameCreator,
+            user1: parsedUserId,
+            user2: null
+
+          
           })
           .then(
             await AsyncStorage.setItem('currentRoom', JSON.stringify(this.state.NewRoom)),
@@ -578,8 +639,9 @@ class RoomName3 extends React.Component {
   }
 }
 
-class ChatRoom extends React.Component {
+ class  ChatRoom extends React.Component {
   constructor(zaza) {
+    
     super(zaza);
     this.state = {
       allTasksComplete: false,
@@ -594,20 +656,21 @@ class ChatRoom extends React.Component {
       zozo: false,
       newRoomName: '',
       creator: '',
-    }
+    };
+    
 
   }
 
-
-
-
+  
   generateTask =  async (taskIndex, taskName) => {
 
-    const creatorCheck = await AsyncStorage.getItem('nickname')
-    this.setState({creator: creatorCheck})
     
+    console.log(this.state.creator)
+    console.log(this.state.newRoomName)
   const nicknameSnap = await collectionRef.where('roomName', '==', this.state.newRoomName).get()
    const nickCheck = nicknameSnap.docs[0].data()
+   
+   
    
    
     if(nickCheck.creator === this.state.creator) {
@@ -619,10 +682,12 @@ class ChatRoom extends React.Component {
       .doc(taskIndex)
       .set({
         taskText: taskName
+        
       })
       .then(() => {
         console.log('Task added')
       })
+
     }
   else {
     firestore()
@@ -631,98 +696,80 @@ class ChatRoom extends React.Component {
       .collection('Beta')
       .doc(taskIndex)
       .set({
-        taskText: taskName
+        taskText: taskName,
+        
       })
       .then(() => {
         console.log('Task added')
       })
+
   } }
 
-  /*
-    updateTask =  taskName => {
-      firestore()
-      .collection('RRN')
-      .doc('Alpha')
-      .update({
-        taskText: taskName
-      })
-      .then(() => {
-        console.log('Task added')-
-      })
-    }
-  */
+  
 
   async componentDidMount() {
     try {
+    console.log('Mount done')
+    const getRoomName = await AsyncStorage.getItem('currentRoom')
+  const parsedRoomName = JSON.parse(getRoomName)
+  this.setState({newRoomName: parsedRoomName})
+
+  const creatorCheck = await AsyncStorage.getItem('nickname')
+  const creatorParsed = JSON.parse(creatorCheck)
+  this.setState({creator: creatorParsed})
+
+  const getUserId = await AsyncStorage.getItem('userId')
+  const parsedUserId = JSON.parse(getUserId)
+  console.log(parsedUserId)
+   
+  const nicknameSnap = await collectionRef.where('roomName', '==', this.state.newRoomName).get()
+   const nickCheck = nicknameSnap.docs[0].data()
+   
+   
+   
+   
+    if(nickCheck.creator === this.state.creator){
+      await AsyncStorage.setItem('route', 'Alpha')
+    } else {
+      await AsyncStorage.setItem('route', 'Beta')
+    }
+
+
+
+    const getRoute = await AsyncStorage.getItem('route')
+    
+
+  const taskDocRef = firestore()
+.collection('Rooms')
+.doc(parsedRoomName)
+.collection(getRoute)
+
+const snapshotTask = await taskDocRef.get()
+try {if (snapshotTask.docs[0].exists) {
+  this.setState({task1: true})
+} else {
+  this.setState({task1: false})
+} 
+
+if (snapshotTask.docs[1].exists) {
+  this.setState({task2: true})
+} else {
+  this.setState({task2: false})
+} } catch {console.log('No task were completed yet')}
+   /* const map = snapshotTask.data().taskText
+  console.log(map) */
+
+   
+
+
+
+
+
+    
+
       
 
-      const trytextx = await AsyncStorage.getItem('currentRoom')
-      const trial = JSON.parse(trytextx)
-
-    const maybe1 = await AsyncStorage.getItem('task1')
-    const string1 = JSON.parse(maybe1)
-
-    const maybe2 = await AsyncStorage.getItem('task2')
-    const string2 = JSON.parse(maybe2)
-    
-    const maybe3 = await AsyncStorage.getItem('task3')
-    const string3 = JSON.parse(maybe3)
-
-    const maybe4 = await AsyncStorage.getItem('task4')
-    const string4 = JSON.parse(maybe4)
-
-    const maybe5 = await AsyncStorage.getItem('task5')
-    const string5 = JSON.parse(maybe5)
-
-    const maybe6 = await AsyncStorage.getItem('task6')
-    const string6 = JSON.parse(maybe6)
-
-    const maybe7 = await AsyncStorage.getItem('task7')
-    const string7 = JSON.parse(maybe7)
-
-      this.setState({newRoomName: trial})
-
-      if (string1 === false) {
-      this.setState({task1: false})
-    } else {
-    this.setState({ task1: string1 }) 
-    }
-
-    if (string2 === false) {
-      this.setState({task2: false})
-    } else {
-    this.setState({ task2: string2 }) 
-    }
-
-    if (string3 === false) {
-      this.setState({task3: false})
-    } else {
-    this.setState({ task3: string3 }) 
-    }
-
-    if (string4 === false) {
-      this.setState({task4: false})
-    } else {
-    this.setState({ task4: string4 }) 
-    }
-
-    if (string5 === false) {
-      this.setState({task5: false})
-    } else {
-    this.setState({ task5: string5 }) 
-    }
-
-    if (string6 === false) {
-      this.setState({task6: false})
-    } else {
-    this.setState({ task6: string6 }) 
-    }
-
-    if (string7 === false) {
-      this.setState({task7: false})
-    } else {
-    this.setState({ task7: string7 }) 
-    }
+      
   } catch (e) {
     console.log(e)
   }
@@ -921,8 +968,15 @@ class ChatRoom extends React.Component {
   buttonTaskOne = async () => {
     this.setState({ task1: true })
     try {
-    
+      
       await AsyncStorage.setItem('task1', JSON.stringify(true))
+
+     /* firestore()
+      .collection('Rooms')
+      .doc(this.state.newRoomName)
+      .set({
+        firstVisit: false
+      }, { merge: true }) */
       
   } catch (e) {
     console.log(e)
